@@ -12,13 +12,27 @@
     <div id="ui">
         <button id="scramble">Scramble</button>
         <button id="reset">Reset</button>
+        <!-- Size chooser -->
+        <label for="cube-size" style="font-size:13px;">Size:</label>
+        <select id="cube-size">
+            <option value="2">2 x 2</option>
+            <option value="3" selected>3 x 3</option>
+            <option value="4">4 x 4</option>
+            <option value="5">5 x 5</option>
+            <option value="6">6 x 6</option>
+            <option value="7">7 x 7</option>
+            <option value="8">8 x 8</option>
+            <option value="9">9 x 9</option>
+            <option value="10">10 x 10</option>
+        </select>
+        <button id="create-cube">Create</button>
         <div id="hint">Tap a sticker then drag to rotate a layer. Two-finger drag to rotate camera.</div>
     </div>
 </div>
 
 <!-- CDN dependencies -->
-<script src="https://unpkg.com/three@0.156.0/build/three.min.js"></script>
-<script src="https://unpkg.com/three@0.156.0/examples/js/controls/OrbitControls.js"></script>
+<script src="three.min.js"></script>
+<script src="OrbitControls.js"></script>
 <script src="https://unpkg.com/gsap@3.12.2/dist/gsap.min.js"></script>
 
 <script src="main.js"></script>
