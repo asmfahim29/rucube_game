@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Rubik Cube 3D Interaction Demo</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div id="app">
+    <canvas id="gl"></canvas>
+    <div id="ui">
+        <button id="scramble">Scramble</button>
+        <button id="reset">Reset</button>
+        <div id="hint">Tap a sticker then drag to rotate a layer. Two-finger drag to rotate camera.</div>
+    </div>
+</div>
+
+<!-- CDN dependencies -->
+<script src="https://unpkg.com/three@0.156.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.156.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://unpkg.com/gsap@3.12.2/dist/gsap.min.js"></script>
+
+<script src="main.js"></script>
+</body>
+</html>

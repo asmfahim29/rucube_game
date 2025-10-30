@@ -12,6 +12,9 @@ class GamePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Use the public CubeWebViewState type here
+    final cubeKey = GlobalKey<CubeWebViewState>();
+
     return BlocBuilder<GameBloc, GameState>(
       builder: (context, state) {
         Widget body;
@@ -29,10 +32,28 @@ class GamePage extends StatelessWidget {
               _Hud(level: state.level, moves: state.moves, elapsed: state.elapsed),
               Expanded(child: Padding(
                 padding: const EdgeInsets.all(12.0),
-                child: CubeView(stickers: state.render),
+                child: CubeWebView(
+                  key: cubeKey,
+                  onJsMessage: (msg) {
+                    if (msg['type'] == 'moveComplete') {
+                      // handle messages from the webview (optional)
+                    }
+                  },
+                ),
               )),
-              _MovePad(onDo: (m) => context.read<GameBloc>().add(MoveCommitted(m)),
-                  onScramble: () => context.read<GameBloc>().add(const ScrambleRequested(moves: 12))),
+              _MovePad(
+                onDo: (m) {
+                  context.read<GameBloc>().add(MoveCommitted(m));
+                },
+                onScramble: () {
+                  context.read<GameBloc>().add(const ScrambleRequested(moves: 12));
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    try {
+                      cubeKey.currentState?.scramble(12);
+                    } catch (e) {}
+                  });
+                },
+              ),
               const SizedBox(height: 12),
             ],
           );
