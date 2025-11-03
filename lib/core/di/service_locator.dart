@@ -1,6 +1,10 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
+import 'package:rucube_game/features/basketball_game/data/repositories/basketball_game_repository_impl.dart';
+import 'package:rucube_game/features/basketball_game/domain/repositories/basketball_game_repository.dart';
+import 'package:rucube_game/features/basketball_game/domain/usecases/get_basketball_game.dart';
+import 'package:rucube_game/features/basketball_game/presentation/bloc/basketball_game_bloc.dart';
 import 'package:rucube_game/features/puzzle/data/repositories/puzzle_repository_impl.dart';
 import 'package:rucube_game/features/puzzle/domain/repositories/puzzle_repository.dart';
 import 'package:rucube_game/features/puzzle/domain/usecases/apply_move.dart';
@@ -49,7 +53,7 @@ Future<void> initDependencies() async {
 
   // BLoC (factory = new instance each time)
   sl.registerFactory(
-        () => GameBloc(
+        () => RucubeGameBloc(
       initPuzzle: sl(),
       applyMove: sl(),
       scramblePuzzle: sl(),
@@ -58,4 +62,17 @@ Future<void> initDependencies() async {
       renderStream: (sl<PuzzleRepository>() as PuzzleRepositoryImpl).render$(),
     ),
   );
+
+  // ------------------ 🧩 Basket-Ball Feature ------------------
+
+  // Repository
+  sl.registerLazySingleton<BasketballGameRepository>(() => BasketballGameRepositoryImpl(remoteDataSource: sl(), localDataSource: sl(), networkInfo: sl(),));
+
+  //UseCases
+  sl.registerLazySingleton(() => GetBasketballGame(sl()));
+
+  // BLoC (facloc( = new instanceloc(h time)
+  sl.registerFactory(() => BasketballGameBloc(420));
+
+
 }

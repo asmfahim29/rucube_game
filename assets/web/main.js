@@ -23,9 +23,13 @@
 
   const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
   camera.position.set(4.5, 4.5, 4.5);
+  renderer.domElement.style.touchAction = 'none'; // CSS equivalent via JS
 
   const controls = new THREE.OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
+  controls.enableRotate = false;
+  controls.enablePan = false;
+  controls.enableZoom = false;
+  controls.enableDamping = false;
   controls.dampingFactor = 0.12;
   controls.enablePan = false;
 
@@ -62,6 +66,66 @@
   let stickerMeshes = [];
   // offset is how far cubie centers are spaced (kept constant)
   let offset = 1.02;
+
+  let currentN = 3;
+
+  window.createCube = function(n) {
+    let N = parseInt(n, 10);
+    if (Number.isNaN(N) || N < 1) N = 3;
+    if (N > 30) N = 30;
+    buildCube(N);
+    currentN = N;                                   // ⬅ store N
+    const span = N * offset;
+    const distance = Math.max(4.5, span * 1.1);
+    camera.position.set(distance, distance, distance);
+    camera.near = Math.max(0.1, distance / 1000);
+    camera.far = Math.max(1000, distance * 20);
+    camera.updateProjectionMatrix();
+    controls.target.set(0, 0, 0);
+    controls.update();
+  };
+
+  // Turn helper: map Singmaster move to axis/coord/direction
+  function performTurn(sym) {
+    // support "R", "R'", "U", etc. ignore spaces
+    const m = (sym || '').trim();
+    if (!m) return;
+    const face = m[0].toUpperCase();
+    const prime = m.endsWith("'");
+    // outer-layer coord index in offset units
+    const max = Math.round((currentN - 1) / 2);   // e.g. N=3 => 1, N=4 => 1 (outer ring index)
+    let axisVec = null, coord = 0, dir = prime ? -1 : 1;
+
+    // NOTE: Depending on your visual orientation, you might flip 'dir' for some faces.
+    // The following works with right-handed 3D axes (x→R, y→U, z→F).
+    switch (face) {
+      case 'U': axisVec = new THREE.Vector3(0, 1, 0); coord =  max; dir = prime ?  1 : -1; break;
+      case 'D': axisVec = new THREE.Vector3(0,-1, 0); coord = -max; dir = prime ?  1 : -1; break;
+      case 'R': axisVec = new THREE.Vector3(1, 0, 0); coord =  max; dir = prime ? -1 :  1; break;
+      case 'L': axisVec = new THREE.Vector3(-1,0, 0); coord = -max; dir = prime ? -1 :  1; break;
+      case 'F': axisVec = new THREE.Vector3(0, 0, 1); coord =  max; dir = prime ? -1 :  1; break;
+      case 'B': axisVec = new THREE.Vector3(0, 0,-1); coord = -max; dir = prime ? -1 :  1; break;
+      default: return;
+    }
+    rotateLayer(axisVec, coord, dir, true);
+    notifyFlutter({ type: 'moveComplete', move: m });
+  }
+
+  // Public API for Dart
+  window.turn = function(move) { performTurn(move); };
+  window.runAlg = function(alg) {
+    if (!alg) return;
+    alg.split(/\s+/).forEach(t => t && performTurn(t));
+  };
+
+  // Optional: keyboard support (U/D/L/R/F/B keys)
+  window.addEventListener('keydown', (e) => {
+    const k = e.key.toUpperCase();
+    if ('UDLRFB'.includes(k)) {
+      performTurn(k);
+      e.preventDefault();
+    }
+  });
 
   // Utility to clear previous cube
   function clearCube() {
@@ -168,6 +232,102 @@
   let selected = null;
   let dragging = false;
   const dragThreshold = 6;
+
+  // ===== Cube-only swipe gestures =====
+  const raycaster = new THREE.Raycaster();
+  const pointer = new THREE.Vector2();
+  let swipeStart = null;         // {x,y}
+  let hitFaceNormal = null;      // THREE.Vector3 of the intersected face
+  let hitPoint = null;           // optional
+  let swipeActive = false;
+
+  function setPointerFromEvent(e) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    const x = ( (e.clientX ?? e.touches?.[0]?.clientX) - rect.left ) / rect.width;
+    const y = ( (e.clientY ?? e.touches?.[0]?.clientY) - rect.top  ) / rect.height;
+    pointer.x =  x * 2 - 1;
+    pointer.y = -y * 2 + 1;
+    return { x: e.clientX ?? e.touches?.[0]?.clientX, y: e.clientY ?? e.touches?.[0]?.clientY };
+  }
+
+  function pickCube(e) {
+    raycaster.setFromCamera(pointer, camera);
+    const hits = raycaster.intersectObjects(cubeGroup.children, true);
+    return hits[0] || null;
+  }
+
+  renderer.domElement.addEventListener('pointerdown', (e) => {
+    setPointerFromEvent(e);
+    const hit = pickCube(e);
+    if (!hit) {
+      // Start outside cube: ignore all movement/scroll gestures
+      swipeActive = false;
+      return;
+    }
+    swipeActive = true;
+    swipeStart = { x: e.clientX, y: e.clientY };
+    hitFaceNormal = hit.face?.normal?.clone() || new THREE.Vector3(0,0,1);
+    hitPoint = hit.point?.clone() || null;
+  });
+
+  renderer.domElement.addEventListener('pointermove', (e) => {
+    // We don’t rotate on move; we only decide on release for crisp, discrete turns.
+    if (!swipeActive) e.preventDefault();
+  });
+
+  renderer.domElement.addEventListener('pointerup', (e) => {
+    if (!swipeActive || !swipeStart) return;
+    const dx = (e.clientX - swipeStart.x);
+    const dy = (e.clientY - swipeStart.y);
+    swipeActive = false;
+
+    // Ignore tiny drags
+    const THRESH = 12; // px
+    if (Math.abs(dx) < THRESH && Math.abs(dy) < THRESH) return;
+
+    // Decide swipe direction in screen space
+    const horizontal = Math.abs(dx) >= Math.abs(dy);
+    const dir = horizontal ? (dx > 0 ? 'RIGHT' : 'LEFT') : (dy > 0 ? 'DOWN' : 'UP');
+
+    // Map touched face normal (+/-X, +/-Y, +/-Z) + swipe dir → U/D/L/R/F/B
+    // NOTE: You may flip some signs depending on your cube orientation.
+    const n = hitFaceNormal.clone().round(); // should be one of [-1,0,0] etc.
+    let move = null;
+
+    // Helpers to choose a consistent mapping:
+    // - When touching the Up face (+Y), swiping LEFT means 'L', RIGHT means 'R', UP means 'B', DOWN means 'F' (example)
+    // - Adjust below until it matches your visual orientation.
+    const isX = Math.abs(n.x) > 0.5;
+    const isY = Math.abs(n.y) > 0.5;
+    const isZ = Math.abs(n.z) > 0.5;
+    const pos = (v) => v > 0;
+
+    if (isY) {
+      // Touch on U/D face → horizontal swipes turn L/R; vertical swipes turn F/B
+      if (dir === 'LEFT')  move = 'L';
+      if (dir === 'RIGHT') move = 'R';
+      if (dir === 'UP')    move = pos(n.y) ? 'B' : 'F';   // touching U swiping up = B; touching D swiping up = F
+      if (dir === 'DOWN')  move = pos(n.y) ? 'F' : 'B';
+    } else if (isX) {
+      // Touch on L/R face → vertical swipes turn U/D; horizontal swipes turn F/B
+      if (dir === 'UP')    move = 'U';
+      if (dir === 'DOWN')  move = 'D';
+      if (dir === 'LEFT')  move = pos(n.x) ? 'B' : 'F';   // touch R & swipe left → B, touch L & swipe left → F
+      if (dir === 'RIGHT') move = pos(n.x) ? 'F' : 'B';
+    } else if (isZ) {
+      // Touch on F/B face → vertical swipes turn U/D; horizontal swipes turn L/R
+      if (dir === 'UP')    move = 'U';
+      if (dir === 'DOWN')  move = 'D';
+      if (dir === 'LEFT')  move = pos(n.z) ? 'L' : 'R';   // touch F & swipe left → L, touch B & swipe left → R
+      if (dir === 'RIGHT') move = pos(n.z) ? 'R' : 'L';
+    }
+
+    if (move) {
+      // Execute the move (single outer layer)
+      performTurn(move);
+    }
+  });
+
 
   function findLayerCubies(axis, coord) {
     // coord is offset coordinate (e.g., -center..center). We'll compare rounded positions.

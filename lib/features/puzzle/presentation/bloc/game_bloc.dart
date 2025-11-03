@@ -11,7 +11,7 @@ import 'package:rucube_game/features/puzzle/domain/usecases/scramble_puzzle.dart
 part 'event/game_event.dart';
 part 'state/game_state.dart';
 
-class GameBloc extends Bloc<GameEvent, GameState> {
+class RucubeGameBloc extends Bloc<GameEvent, GameState> {
   final InitPuzzle initPuzzle;
   final ApplyMove applyMove;
   final ScramblePuzzle scramblePuzzle;
@@ -22,7 +22,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
   StreamSubscription<List<RenderSticker>>? _sub;
   DateTime? _start;
 
-  GameBloc({
+  RucubeGameBloc({
     required this.initPuzzle,
     required this.applyMove,
     required this.scramblePuzzle,

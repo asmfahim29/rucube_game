@@ -1,19 +1,18 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 typedef JsMessageHandler = void Function(Map<String, dynamic> message);
 
+// NEW props + helpers
 class CubeWebView extends StatefulWidget {
+  final int? initialSize;                 // ⬅ pass level.size here
   final JsMessageHandler? onJsMessage;
-  const CubeWebView({super.key, this.onJsMessage});
+  const CubeWebView({super.key, this.initialSize, this.onJsMessage});
 
   @override
   CubeWebViewState createState() => CubeWebViewState();
 }
 
-// NOTE: This State class is PUBLIC (no leading underscore). That allows other
-// files to write: GlobalKey<CubeWebViewState>() and call methods like scramble().
 class CubeWebViewState extends State<CubeWebView> {
   late final WebViewController _controller;
 
@@ -23,22 +22,18 @@ class CubeWebViewState extends State<CubeWebView> {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..addJavaScriptChannel('Flutter', onMessageReceived: _onJsMessage)
-      ..setBackgroundColor(const Color(0xFF0B0B10));
-
-    // load the local asset (assets/web/cube.html)
-    _controller.loadFlutterAsset('assets/web/cube.html');
+      ..setBackgroundColor(const Color(0xFF0B0B10))
+      ..setNavigationDelegate(NavigationDelegate(
+        onPageFinished: (_) async {
+          if (widget.initialSize != null) {
+            await _controller.runJavaScript('window.createCube(${widget.initialSize});');
+          }
+        },
+      ))
+      ..loadFlutterAsset('assets/web/cube.html');
   }
 
-  void _onJsMessage(JavaScriptMessage msg) {
-    try {
-      final Map<String, dynamic> data = jsonDecode(msg.message);
-      if (widget.onJsMessage != null) widget.onJsMessage!(data);
-    } catch (e) {
-      // ignore parse errors
-    }
-  }
-
-  // Public helpers for the parent widget to call
+  // Existing helpers…
   Future<void> scramble([int moves = 12]) async {
     await _controller.runJavaScript('if(window.scramble) window.scramble($moves);');
   }
@@ -47,13 +42,33 @@ class CubeWebViewState extends State<CubeWebView> {
     await _controller.runJavaScript('if(window.resetCube) window.resetCube();');
   }
 
-  Future<void> setStickerColor(String face, int cx, int cy, String hexColor) async {
-    final safe = hexColor.startsWith('#') ? hexColor : '#$hexColor';
-    await _controller.runJavaScript("if(window.setStickerColor) window.setStickerColor('$face',$cx,$cy,'$safe');");
+  // NEW: build N×N on demand
+  Future<void> createCube(int n) async {
+    await _controller.runJavaScript('if(window.createCube) window.createCube($n);');
+  }
+
+  // NEW: single turn like 'U', "R'", etc.
+  Future<void> turn(String move) async {
+    final m = move.replaceAll("'", "\\'");
+    await _controller.runJavaScript("if(window.turn) window.turn('$m');");
+  }
+
+  // NEW: run a full algorithm string e.g. "R U R' U'"
+  Future<void> runAlg(String alg) async {
+    final a = alg.replaceAll("'", "\\'");
+    await _controller.runJavaScript("if(window.runAlg) window.runAlg('$a');");
+  }
+
+  void _onJsMessage(JavaScriptMessage message) {
+    final data = message.message;
+    debugPrint('📩 Message from JS: $data');
+
+    // If you want to send it back to Flutter logic
+    if (widget.onJsMessage != null) {
+      widget.onJsMessage!(data as Map<String, dynamic>);
+    }
   }
 
   @override
-  Widget build(BuildContext context) {
-    return WebViewWidget(controller: _controller);
-  }
+  Widget build(BuildContext context) => WebViewWidget(controller: _controller);
 }

@@ -15,7 +15,7 @@ class GamePage extends StatelessWidget {
     // Use the public CubeWebViewState type here
     final cubeKey = GlobalKey<CubeWebViewState>();
 
-    return BlocBuilder<GameBloc, GameState>(
+    return BlocBuilder<RucubeGameBloc, GameState>(
       builder: (context, state) {
         Widget body;
         if (state is GameLoading) {
@@ -23,7 +23,7 @@ class GamePage extends StatelessWidget {
         } else if (state is GameSolved) {
           body = Stack(children: [
             const _Backdrop(),
-            CelebrationOverlay(onNext: () => context.read<GameBloc>().add(const NextLevelRequested())),
+            CelebrationOverlay(onNext: () => context.read<RucubeGameBloc>().add(const NextLevelRequested())),
           ]);
         } else if (state is GameReady) {
           body = Column(
@@ -43,10 +43,10 @@ class GamePage extends StatelessWidget {
               )),
               _MovePad(
                 onDo: (m) {
-                  context.read<GameBloc>().add(MoveCommitted(m));
+                  context.read<RucubeGameBloc>().add(MoveCommitted(m));
                 },
                 onScramble: () {
-                  context.read<GameBloc>().add(const ScrambleRequested(moves: 12));
+                  context.read<RucubeGameBloc>().add(const ScrambleRequested(moves: 12));
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     try {
                       cubeKey.currentState?.scramble(12);

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:rucube_game/features/puzzle/presentation/bloc/game_bloc.dart';
-import 'package:rucube_game/features/puzzle/presentation/pages/level_select_page.dart';
+import 'package:rucube_game/features/basketball_game/presentation/bloc/basketball_game_bloc.dart';
+import 'package:rucube_game/features/basketball_game/presentation/pages/basketball_game_page.dart';
 import '/core/constants/api_urls.dart';
 import '/core/di/service_locator.dart';
 import '/core/presentation/widgets/global_network_listener.dart';
@@ -17,14 +17,10 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    // Initialize core services (preferences, API URLs, etc.)
     await initServices();
 
-    // Initialize dependency injection (get_it service locator)
-    // This must be called before runApp() to ensure all dependencies are ready
     await initDependencies();
 
-    // Set Portrait Mode only
     await SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -32,13 +28,11 @@ void main() async {
 
     runApp(const MyApp());
   } catch (e, stackTrace) {
-    // Log initialization error
     debugPrint('❌ App initialization failed: $e');
     debugPrint('Stack trace: $stackTrace');
-
     runApp(
-        MaterialApp(home: AppStarterError(error: e.toString())),
-      );
+      MaterialApp(home: AppStarterError(error: e.toString())),
+    );
   }
 }
 
@@ -61,7 +55,8 @@ class MyApp extends StatelessWidget {
       builder: (ctx, child) {
         return MultiBlocProvider(
           providers: [
-            BlocProvider(create: (context) => sl<GameBloc>()),
+            BlocProvider(create: (context) => sl<BasketballGameBloc>()),
+            // BlocProvider(create: (context) => sl<RucubeGameBloc>()),
           ],
           child: MaterialApp(
             title: 'Rucube_game',
@@ -104,7 +99,7 @@ class MyApp extends StatelessWidget {
     // if (isLoggedIn) {
     //   return const ProductPage();
     // }
-    return const LevelSelectPage();
+    return const BasketballGameScreen();
   }
 }
 

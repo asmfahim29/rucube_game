@@ -22,7 +22,7 @@ class LevelSelectPage extends StatelessWidget {
           final l = levels[i];
           return InkWell(
             onTap: (){
-              context.read<GameBloc>().add(GameStarted(l));
+              context.read<RucubeGameBloc>().add(GameStarted(l));
               Navigator.of(context).push(MaterialPageRoute(builder: (_) => GamePage(level: l)));
             },
             child: Card(
