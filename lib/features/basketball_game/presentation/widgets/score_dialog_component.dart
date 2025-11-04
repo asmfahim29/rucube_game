@@ -1,8 +1,13 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
-import 'package:confetti/confetti.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../bloc/basketball_game_bloc.dart';
+import '../bloc/event/basketball_game_event.dart';
 
 class ScoreDialog extends StatefulWidget {
   final int score;
+
   const ScoreDialog({super.key, required this.score});
 
   @override
@@ -10,56 +15,146 @@ class ScoreDialog extends StatefulWidget {
 }
 
 class _ScoreDialogState extends State<ScoreDialog> {
-  late ConfettiController _confetti;
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   @override
   void initState() {
     super.initState();
-    _confetti = ConfettiController(duration: const Duration(seconds: 2));
-    _confetti.play();
+    // FIX: Play game over sound when dialog appears
+    _playGameOverSound();
+  }
+
+  Future<void> _playGameOverSound() async {
+    try {
+      await _audioPlayer.play(AssetSource('sounds/miss.mp3'));
+    } catch (e) {
+      print('Error playing game over sound: $e');
+    }
   }
 
   @override
   void dispose() {
-    _confetti.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        AlertDialog(
-          title: const Text('🏀 Game Over'),
-          content: Text(
-            'Your Score: ${widget.score}\n${_message(widget.score)}',
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 16),
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.orange.shade400,
+              Colors.deepOrange.shade600,
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Play Again'),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.sports_basketball,
+              size: 80,
+              color: Colors.white,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'GAME OVER',
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    'Final Score',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.white70,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${widget.score}',
+                    style: const TextStyle(
+                      fontSize: 48,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                // Home Button
+                // ElevatedButton.icon(
+                //   onPressed: () {
+                //     Navigator.of(context).pop();
+                //     Navigator.of(context).pop(); // Go back to home
+                //   },
+                //   icon: const Icon(Icons.home),
+                //   label: const Text('Home'),
+                //   style: ElevatedButton.styleFrom(
+                //     backgroundColor: Colors.white,
+                //     foregroundColor: Colors.deepOrange,
+                //     padding: const EdgeInsets.symmetric(
+                //       horizontal: 20,
+                //       vertical: 12,
+                //     ),
+                //     shape: RoundedRectangleBorder(
+                //       borderRadius: BorderRadius.circular(12),
+                //     ),
+                //   ),
+                // ),
+                // Play Again Button
+                ElevatedButton.icon(
+                  onPressed: () {
+                    // FIX: Reset the game when play again is pressed
+                    context.read<BasketballGameBloc>().add(ResetGame());
+                    Navigator.of(context).pop();
+                  },
+                  icon: const Icon(Icons.replay),
+                  label: const Text('Play Again'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.deepOrange,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
-        ConfettiWidget(
-          confettiController: _confetti,
-          blastDirectionality: BlastDirectionality.explosive,
-          shouldLoop: false,
-          numberOfParticles: 20,
-          colors: const [Colors.orange, Colors.blue, Colors.pink, Colors.purple],
-        ),
-      ],
+      ),
     );
-  }
-
-  String _message(int score) {
-    if (score == 0) return "😅 Better luck next time!";
-    if (score < 5) return "👏 Not bad, keep practicing!";
-    if (score < 10) return "🔥 You're getting good!";
-    return "🏆 Legend! You’ve mastered it!";
   }
 }
 

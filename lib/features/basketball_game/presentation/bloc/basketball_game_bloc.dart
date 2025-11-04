@@ -9,7 +9,11 @@ const _kGravity = 2200.0;
 const _kFriction = 0.998;
 const _kHoopWindow = 240.0;
 const _kFloorY = 1800.0;
-const _kSpeedPerLevel = 120.0; // L2: 120, L3: 240...
+
+// FIX 2: New speed progression - starts at 0, increases at score 5, saturates at score 9
+const _kInitialSpeed = 0.0;        // Level 1: stationary
+const _kSpeedIncrement = 80.0;     // Speed increase per level after score 5
+const _kMaxSpeed = 320.0;          // Maximum speed (reached at score 9)
 
 class BasketballGameBloc extends Bloc<BasketballGameEvent, BasketballGameState> {
   final double screenWidth;
@@ -25,9 +29,14 @@ class BasketballGameBloc extends Bloc<BasketballGameEvent, BasketballGameState> 
     on<HideScoreFlash>((e, emit) => emit(state.copyWith(scoreFlash: false)));
     on<ShowLevelSplash>((e, emit) => emit(state.copyWith(levelSplash: true, splashLevel: e.level)));
     on<HideLevelSplash>((e, emit) => emit(state.copyWith(levelSplash: false)));
+    on<ResetGame>(_onResetGame);
   }
 
   void _onStart(GameStarted e, Emitter<BasketballGameState> emit) {
+    emit(BasketballGameState.initial(screenWidth / 2));
+  }
+
+  void _onResetGame(ResetGame e, Emitter<BasketballGameState> emit) {
     emit(BasketballGameState.initial(screenWidth / 2));
   }
 
@@ -40,7 +49,7 @@ class BasketballGameBloc extends Bloc<BasketballGameEvent, BasketballGameState> 
   }
 
   void _onRelease(ShotRelease e, Emitter<BasketballGameState> emit) {
-    final drag = state.aimStart - e.p;              // opposite of swipe
+    final drag = state.aimStart - e.p;
     final v0 = Offset(drag.dx * 2.2, drag.dy * 2.2);
     emit(state.copyWith(aiming: false, ballVel: v0));
   }
@@ -54,20 +63,16 @@ class BasketballGameBloc extends Bloc<BasketballGameEvent, BasketballGameState> 
     v = Offset(v.dx * _kFriction, (v.dy + _kGravity * dt) * _kFriction);
     p = Offset(p.dx + v.dx * dt, p.dy + v.dy * dt);
 
-    // hoop movement (constant per level)
+    // hoop movement
     var hx = state.hoopX;
-    if (state.hoopSpeed > 0) {
-      // ping-pong between margins
+    if (state.hoopSpeed.abs() > 0.1) {
       final speed = state.hoopSpeed;
-      hx += _dirFromSpeedTick(speed) * speed * dt;
+      hx += _dirFromSpeedTick(speed) * speed.abs() * dt;
       final margin = 40 + _kHoopWindow * 0.5;
       final minX = margin;
       final maxX = screenWidth - margin;
       if (hx < minX || hx > maxX) {
-        // reflect back inside
         hx = hx.clamp(minX, maxX);
-        // invert direction by flipping sign of speed using a tiny hack:
-        // we store direction in sign of hoopSpeed; flip it
         final newSpeed = -state.hoopSpeed;
         emit(state.copyWith(hoopX: hx, ballPos: p, ballVel: v, hoopSpeed: newSpeed));
         return;
@@ -79,14 +84,12 @@ class BasketballGameBloc extends Bloc<BasketballGameEvent, BasketballGameState> 
     final within = (p.dx - hx).abs() <= (_kHoopWindow * 0.5);
     if (crossedDown && within) {
       add(Scored());
-      // spawn a quick drop anim at rim (optional)
       add(SpawnScoreAnim(hx, _kHoopY));
     }
 
-    // miss
+    // miss - only if ball goes below floor
     if (p.dy > _kFloorY) {
       add(Missed());
-      // reset the ball for next shot
       emit(state.copyWith(ballPos: Offset(screenWidth/2, 1500), ballVel: Offset.zero, hoopX: hx));
       return;
     }
@@ -97,18 +100,12 @@ class BasketballGameBloc extends Bloc<BasketballGameEvent, BasketballGameState> 
   void _onScored(Scored e, Emitter<BasketballGameState> emit) {
     final newScore = state.score + 1;
 
-    // decide if level up (every 10 points)
-    final newLevel = (newScore ~/ 10) + 1; // 1..∞
-    var levelUp = false;
-    var nextSpeed = state.hoopSpeed;
+    // FIX 2: New speed progression logic
+    double nextSpeed = _calculateHoopSpeed(newScore, state.hoopSpeed);
 
-    if (newLevel != state.level) {
-      levelUp = true;
-      // speed magnitude grows with level, direction sign preserved
-      final dir = state.hoopSpeed == 0 ? 1.0 : (state.hoopSpeed > 0 ? 1.0 : -1.0);
-      final mag = (newLevel - 1) * _kSpeedPerLevel;
-      nextSpeed = dir * mag;
-    }
+    // Determine level based on score for display purposes
+    final newLevel = (newScore ~/ 5) + 1;
+    final levelUp = newLevel != state.level;
 
     emit(state.copyWith(
       score: newScore,
@@ -117,7 +114,6 @@ class BasketballGameBloc extends Bloc<BasketballGameEvent, BasketballGameState> 
       scoreFlash: true,
     ));
 
-    // hide the score flash shortly after
     Future.microtask(() => add(HideScoreFlash()));
 
     if (levelUp) {
@@ -126,13 +122,33 @@ class BasketballGameBloc extends Bloc<BasketballGameEvent, BasketballGameState> 
     }
   }
 
-  void _onMissed(Missed e, Emitter<BasketballGameState> emit) {
-    final left = state.lives - 1;
-    emit(state.copyWith(lives: left));
-    // your existing dialog should open when lives == 0
-    // (trigger that from the UI layer watching lives)
+  // FIX 2: Calculate hoop speed based on score
+  double _calculateHoopSpeed(int score, double currentSpeed) {
+    if (score < 5) {
+      // Scores 0-4: Hoop is stationary
+      return 0.0;
+    } else if (score >= 9) {
+      // Score 9+: Speed saturates at maximum
+      final dir = currentSpeed == 0 ? 1.0 : (currentSpeed > 0 ? 1.0 : -1.0);
+      return dir * _kMaxSpeed;
+    } else {
+      // Scores 5-8: Speed increases gradually
+      final dir = currentSpeed == 0 ? 1.0 : (currentSpeed > 0 ? 1.0 : -1.0);
+      final speedLevel = score - 4; // 1, 2, 3, 4 for scores 5, 6, 7, 8
+      final speed = _kSpeedIncrement * speedLevel;
+      return dir * speed.clamp(0, _kMaxSpeed);
+    }
   }
 
-  // a tiny helper: sign for current speed
+  void _onMissed(Missed e, Emitter<BasketballGameState> emit) {
+    final left = state.lives - 1;
+
+    if (left <= 0) {
+      emit(state.copyWith(lives: 0, isGameOver: true));
+    } else {
+      emit(state.copyWith(lives: left));
+    }
+  }
+
   double _dirFromSpeedTick(double s) => s == 0 ? 0 : (s > 0 ? 1 : -1);
 }

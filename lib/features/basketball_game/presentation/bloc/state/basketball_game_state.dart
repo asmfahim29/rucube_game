@@ -1,19 +1,17 @@
 import 'dart:ui';
 import 'package:equatable/equatable.dart';
 
-
-
 class BasketballGameState extends Equatable {
   // gameplay
   final int score;
-  final int lives;            // chances left (3 → 2 → 1 → 0 = game over)
+  final int lives;            // chances left (5 → 4 → 3 → 2 → 1 → 0 = game over)
   final int level;
   final int misses;             // 1,2,3...
   final double hoopX;         // center x of the hoop
   final double hoopSpeed;     // px/s; increases by level
   final Offset ballPos;
   final Offset ballVel;
-  final bool isGameOver;  // ✅ add this flag
+  final bool isGameOver;
 
   // aiming
   final bool aiming;
@@ -22,7 +20,7 @@ class BasketballGameState extends Equatable {
 
   // UI transients
   final bool scoreFlash;      // briefly true after each score
-  final bool levelSplash;     // show “LEVEL N”
+  final bool levelSplash;     // show "LEVEL N"
   final int? splashLevel;     // which level to show in splash
 
   const BasketballGameState({
@@ -45,7 +43,7 @@ class BasketballGameState extends Equatable {
 
   factory BasketballGameState.initial(double centerX) => BasketballGameState(
     score: 0,
-    lives: 3,
+    lives: 5,  // FIX: Changed from 3 to 5
     level: 1,
     misses: 0,
     hoopX: centerX,
@@ -56,7 +54,7 @@ class BasketballGameState extends Equatable {
     aimStart: Offset.zero,
     aimCurrent: Offset.zero,
     scoreFlash: false,
-    levelSplash: true,        // show “LEVEL 1” on first load
+    levelSplash: false,  // FIX: Changed to false - don't show on initial load
     splashLevel: 1,
     isGameOver: false,
   );

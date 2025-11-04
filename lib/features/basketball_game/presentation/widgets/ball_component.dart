@@ -11,6 +11,9 @@ class BallComponent extends SpriteComponent with HasGameReference<BasketballGame
 
   BallComponent() : super(size: Vector2(40, 40));
 
+  late final Animation _ballAnim;
+
+
   @override
   Future<void> onLoad() async {
     sprite = await Sprite.load('basketball.png');
@@ -44,9 +47,9 @@ class BallComponent extends SpriteComponent with HasGameReference<BasketballGame
 
   void resetBall() {
     isMoving = false;
+    position = Vector2(game.size.x / 2, game.size.y - 100);
     velocity = Vector2.zero();
     rotationSpeed = 0.0;
-    position = Vector2(game.size.x / 2, game.size.y - 100);
   }
 }
 
