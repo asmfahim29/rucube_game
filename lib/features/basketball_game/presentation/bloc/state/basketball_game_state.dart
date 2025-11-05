@@ -43,7 +43,7 @@ class BasketballGameState extends Equatable {
 
   factory BasketballGameState.initial(double centerX) => BasketballGameState(
     score: 0,
-    lives: 5,  // FIX: Changed from 3 to 5
+    lives: 5,
     level: 1,
     misses: 0,
     hoopX: centerX,

@@ -2,7 +2,6 @@ import 'dart:ui';
 import 'package:flame/game.dart';
 import 'package:rucube_game/features/basketball_game/presentation/bloc/basketball_game_bloc.dart';
 import 'package:rucube_game/features/basketball_game/presentation/bloc/event/basketball_game_event.dart';
-import 'package:rucube_game/features/basketball_game/presentation/widgets/play_ground_widget.dart';
 import 'ball_component.dart';
 import 'hoop_component.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -14,18 +13,38 @@ class BasketballGame extends FlameGame {
   final AudioPlayer scorePlayer = AudioPlayer();
   final AudioPlayer missPlayer = AudioPlayer();
   bool hasScored = false;
+  bool lastGameOverState = false;
+  int lastLevel = 1;
+  double lastHoopSpeed = 0.0;
 
   BasketballGame(this.bloc);
 
   @override
   Future<void> onLoad() async {
-    ball = BallComponent();
     hoop = HoopComponent();
-    final boundary = PlaygroundBoundary();
-    final audience = Audience();
+    ball = BallComponent();
 
-    addAll([boundary, audience, hoop, ball]); // Add to game components
+    add(hoop);
+    add(ball);
+
+    // Listen to BLoC state changes
+    bloc.stream.listen((state) {
+      // Update hoop speed when it changes
+      if (state.hoopSpeed != lastHoopSpeed) {
+        lastHoopSpeed = state.hoopSpeed;
+        hoop.setSpeed(state.hoopSpeed);
+      }
+
+      // Reset game when transitioning from game over to new game
+      if (lastGameOverState && !state.isGameOver) {
+        resetGame();
+      }
+
+      lastGameOverState = state.isGameOver;
+      lastLevel = state.level;
+    });
   }
+
 
   @override
   void update(double dt) {
@@ -69,7 +88,7 @@ class BasketballGame extends FlameGame {
         hoop.triggerScoreAnimation();
 
         // Reset ball after animation completes
-        Future.delayed(const Duration(milliseconds: 800), () {
+        Future.delayed(const Duration(milliseconds: 150), () {
           ball.resetBall();
           hasScored = false;
         });
@@ -85,16 +104,23 @@ class BasketballGame extends FlameGame {
   }
 
   void onFlick(Offset velocity) {
-    if (!ball.isMoving && !hasScored) {
-      ball.shoot(velocity);
-    }
+    ball.shoot(velocity);
   }
 
-  void handleMissedShot() async {
-    // FIX 1: Immediate sound playback with separate player
-    await playMissSound();
+  void handleMissedShot() {
+    playMissSound();
     bloc.add(Missed());
+    ball.resetBall();
   }
+
+  // NEW: Reset all game components
+  void resetGame() {
+    ball.resetBall();
+    hoop.resetHoop();
+    lastHoopSpeed = 0.0;
+    lastLevel = 1;
+  }
+
 
   Future<void> playScoreSound() async {
     try {

@@ -99,7 +99,7 @@ class MyApp extends StatelessWidget {
     // if (isLoggedIn) {
     //   return const ProductPage();
     // }
-    return const BasketballGameScreen();
+    return BasketballGameScreen();
   }
 }
 

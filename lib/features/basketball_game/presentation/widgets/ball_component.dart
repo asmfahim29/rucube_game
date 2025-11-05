@@ -9,10 +9,10 @@ class BallComponent extends SpriteComponent with HasGameReference<BasketballGame
   bool isMoving = false;
   double rotationSpeed = 0.0;
 
+  // FIX 1: Add flag to track if ball has been shot before
+  bool hasBeenShot = false;
+
   BallComponent() : super(size: Vector2(40, 40));
-
-  late final Animation _ballAnim;
-
 
   @override
   Future<void> onLoad() async {
@@ -33,16 +33,27 @@ class BallComponent extends SpriteComponent with HasGameReference<BasketballGame
 
     if (position.y > game.size.y + 50) {
       resetBall();
+      // FIX 3: Call miss handler immediately when ball goes off screen
       game.handleMissedShot();
     }
   }
 
   void shoot(Offset flickVelocity) {
-    final vx = (flickVelocity.dx / 6).clamp(-800, 800).toDouble();
-    final vy = (flickVelocity.dy / 6).clamp(-1200, -400).toDouble();
-    velocity = Vector2(vx, vy);
+    // FIX 1: Ensure proper velocity calculation on first shot
+    // Clamp values more aggressively and ensure minimum velocity
+    final vx = (flickVelocity.dx / 6).clamp(-800.0, 800.0);
+    final vy = (flickVelocity.dy / 6).clamp(-1200.0, -400.0);
+
+    // Add minimum threshold to ensure ball always moves
+    final finalVy = vy.abs() < 400 ? -400.0 : vy;
+
+    velocity = Vector2(vx, finalVy);
     rotationSpeed = vx.sign * 5;
     isMoving = true;
+    hasBeenShot = true;
+
+    // Debug print to verify velocity
+    print('Ball shot with velocity: vx=$vx, vy=$finalVy');
   }
 
   void resetBall() {
@@ -50,6 +61,7 @@ class BallComponent extends SpriteComponent with HasGameReference<BasketballGame
     position = Vector2(game.size.x / 2, game.size.y - 100);
     velocity = Vector2.zero();
     rotationSpeed = 0.0;
+    angle = 0.0; // Reset rotation angle as well
   }
 }
 

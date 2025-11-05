@@ -101,11 +101,11 @@ class BasketballGameBloc extends Bloc<BasketballGameEvent, BasketballGameState> 
     final newScore = state.score + 1;
 
     // FIX 2: New speed progression logic
-    double nextSpeed = _calculateHoopSpeed(newScore, state.hoopSpeed);
-
-    // Determine level based on score for display purposes
     final newLevel = (newScore ~/ 5) + 1;
     final levelUp = newLevel != state.level;
+
+    // Use level-based speed instead of score-based
+    double nextSpeed = _calculateHoopSpeed(newLevel, state.hoopSpeed);
 
     emit(state.copyWith(
       score: newScore,
@@ -123,22 +123,22 @@ class BasketballGameBloc extends Bloc<BasketballGameEvent, BasketballGameState> 
   }
 
   // FIX 2: Calculate hoop speed based on score
-  double _calculateHoopSpeed(int score, double currentSpeed) {
-    if (score < 5) {
-      // Scores 0-4: Hoop is stationary
+  double _calculateHoopSpeed(int level, double currentSpeed) {
+    // Determine the movement direction (keep same direction if already moving)
+    final dir = currentSpeed == 0 ? 1.0 : (currentSpeed > 0 ? 1.0 : -1.0);
+
+    if (level <= 1) {
+      // Level 1: stationary hoop
       return 0.0;
-    } else if (score >= 9) {
-      // Score 9+: Speed saturates at maximum
-      final dir = currentSpeed == 0 ? 1.0 : (currentSpeed > 0 ? 1.0 : -1.0);
-      return dir * _kMaxSpeed;
-    } else {
-      // Scores 5-8: Speed increases gradually
-      final dir = currentSpeed == 0 ? 1.0 : (currentSpeed > 0 ? 1.0 : -1.0);
-      final speedLevel = score - 4; // 1, 2, 3, 4 for scores 5, 6, 7, 8
-      final speed = _kSpeedIncrement * speedLevel;
-      return dir * speed.clamp(0, _kMaxSpeed);
     }
+
+    // Starting from level 2, increase speed gradually
+    final speed = _kInitialSpeed + _kSpeedIncrement * (level - 1);
+
+    // Clamp speed to maximum limit
+    return dir * speed.clamp(0, _kMaxSpeed);
   }
+
 
   void _onMissed(Missed e, Emitter<BasketballGameState> emit) {
     final left = state.lives - 1;

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flame/game.dart';
@@ -9,7 +11,28 @@ import 'package:rucube_game/features/basketball_game/presentation/widgets/score_
 import '../widgets/basketball_game_logic_widget.dart';
 
 class BasketballGameScreen extends StatelessWidget {
-  const BasketballGameScreen({super.key});
+  BasketballGameScreen({super.key});
+
+  final _random = Random();
+
+  final List<Color> _colorPalette = [
+    Colors.lightBlueAccent,
+    Colors.greenAccent.shade200,
+    Colors.purple.shade200,
+    Colors.teal,
+    Colors.pink.shade200,
+    Colors.deepPurple,
+    Colors.cyan.shade200,
+    Colors.lime.shade200,
+    Colors.amber.shade200,
+    Colors.indigo.shade200, // Chocolate
+    Colors.white,
+  ];
+
+  Color _getBackgroundColor(int level) {
+    // Randomly select a color from the palette
+    return _colorPalette[_random.nextInt(_colorPalette.length)];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,17 +40,22 @@ class BasketballGameScreen extends StatelessWidget {
     final game = BasketballGame(bloc);
 
     return Scaffold(
-      backgroundColor: Colors.blue.shade50,
+      // backgroundColor: Colors.blue.shade50,
       body: BlocListener<BasketballGameBloc, BasketballGameState>(
-          listenWhen: (previous, current) => previous.isGameOver != current.isGameOver,
+          listenWhen: (previous, current) =>
+          previous.isGameOver != current.isGameOver,
           listener: (context, state) {
             if (state.isGameOver) {
               showDialog(
                 context: context,
                 barrierDismissible: false,
                 builder: (_) => ScoreDialog(score: state.score),
-              ).whenComplete((){
+              ).whenComplete(() {
+                // Reset BLoC state
                 bloc.add(ResetGame());
+
+                // Reset game components
+                game.resetGame();
               });
             }
           },
@@ -40,9 +68,18 @@ class BasketballGameScreen extends StatelessWidget {
             },
             child: Stack(
               children: [
-                GameWidget(
-                  game: game,
-                  backgroundBuilder: (context) => Container(color: Colors.white),
+                BlocBuilder<BasketballGameBloc, BasketballGameState>(
+                  buildWhen: (p, n) => p.level != n.level,
+                  builder: (_, state) => AnimatedContainer(
+                    duration: const Duration(milliseconds: 800),
+                    curve: Curves.easeInOut,
+                    child: GameWidget(
+                      game: game,
+                      backgroundBuilder: (context) => Container(
+                        color: _getBackgroundColor(state.level),
+                      ),
+                    ),
+                  ),
                 ),
 
                 // CENTER SCORE
@@ -89,12 +126,12 @@ class BasketballGameScreen extends StatelessWidget {
                           child: filled
                               ? Image.asset(
                             'assets/images/basketball.png',
-                            width: 24,
-                            height: 24,
+                            width: 20,
+                            height: 20,
                           )
                               : Container(
-                            width: 24,
-                            height: 24,
+                            width: 20,
+                            height: 20,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: Colors.grey.withOpacity(0.3),
