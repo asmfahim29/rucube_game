@@ -18,7 +18,7 @@ class HoopComponent extends SpriteComponent with HasGameReference<BasketballGame
   @override
   Future<void> onLoad() async {
     sprite = await Sprite.load('hoop.png');
-    position = Vector2((game.size.x - size.x) / 2, 200);
+    position = Vector2((game.size.x - size.x) / 2, 150);
 
     // Store initial position for reset
     initialPosition = position.clone();

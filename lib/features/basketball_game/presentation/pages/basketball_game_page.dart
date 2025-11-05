@@ -68,6 +68,7 @@ class BasketballGameScreen extends StatelessWidget {
             },
             child: Stack(
               children: [
+
                 BlocBuilder<BasketballGameBloc, BasketballGameState>(
                   buildWhen: (p, n) => p.level != n.level,
                   builder: (_, state) => AnimatedContainer(
@@ -83,27 +84,42 @@ class BasketballGameScreen extends StatelessWidget {
                 ),
 
                 // CENTER SCORE
-                Positioned.fill(
+                Positioned(
+                  left: 16,
+                  top: 32,
                   child: IgnorePointer(
                     child: Center(
                       child: BlocBuilder<BasketballGameBloc, BasketballGameState>(
                         buildWhen: (p, n) => p.score != n.score || p.scoreFlash != n.scoreFlash,
-                        builder: (_, s) => AnimatedOpacity(
-                          duration: const Duration(milliseconds: 180),
-                          opacity: s.scoreFlash ? 1 : 0.9,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(18),
+                        builder: (_, s) => AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1a1a1a),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.red.withOpacity(0.8),
+                              width: 2,
                             ),
-                            child: Text(
-                              '${s.score}',
-                              style: const TextStyle(
-                                fontSize: 56,
-                                color: Colors.white,
-                                fontWeight: FontWeight.w800,
-                              ),
+                          ),
+                          child: AnimatedDefaultTextStyle(
+                            duration: const Duration(milliseconds: 150),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: s.scoreFlash ? Colors.red : const Color(0xFFff3333),
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 2,
+                            ),
+                            child: Row(
+                              children: [
+                                const Text(
+                                  'SCORE:',
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '${s.score}',
+                                ),
+                              ],
                             ),
                           ),
                         ),

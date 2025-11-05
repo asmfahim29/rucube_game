@@ -1,5 +1,7 @@
 import 'dart:ui';
+import 'package:flame/events.dart';
 import 'package:flame/game.dart';
+import 'package:rucube_game/core/constants/basket_ball_constants.dart';
 import 'package:rucube_game/features/basketball_game/presentation/bloc/basketball_game_bloc.dart';
 import 'package:rucube_game/features/basketball_game/presentation/bloc/event/basketball_game_event.dart';
 import 'ball_component.dart';
@@ -136,5 +138,24 @@ class BasketballGame extends FlameGame {
     } catch (e) {
       print('Error playing miss sound: $e');
     }
+  }
+
+  // Input: swipe/flick from ball area (like Messenger)
+  void onPanStart(DragStartInfo info) {
+    final p = info.eventPosition.global;
+    // Only start if near the ball
+    if ((p - ball.position).length <= kBallRadius * 1.4) {
+      bloc.add(ShotBegin(Offset(p.x, p.y)));
+    }
+  }
+
+  void onPanUpdate(DragUpdateInfo info) {
+    final p = info.eventPosition.global;
+    bloc.add(ShotDrag(Offset(p.x, p.y)));
+  }
+
+  void onPanEnd(DragEndInfo info) {
+    final p = info.velocity;
+    bloc.add(ShotRelease(Offset(p.x, p.y)));
   }
 }

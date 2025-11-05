@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '/features/basketball_game/presentation/bloc/event/basketball_game_event.dart';
 import '/features/basketball_game/presentation/bloc/state/basketball_game_state.dart';
@@ -33,15 +34,23 @@ class BasketballGameBloc extends Bloc<BasketballGameEvent, BasketballGameState> 
   }
 
   void _onStart(GameStarted e, Emitter<BasketballGameState> emit) {
-    emit(BasketballGameState.initial(screenWidth / 2));
+    emit(BasketballGameState.initial(screenWidth / 2).copyWith(
+      ballVel: Offset.zero,
+    ));
   }
 
   void _onResetGame(ResetGame e, Emitter<BasketballGameState> emit) {
-    emit(BasketballGameState.initial(screenWidth / 2));
+    emit(BasketballGameState.initial(screenWidth / 2).copyWith(
+      ballVel: Offset.zero,
+    ));
   }
 
   void _onBegin(ShotBegin e, Emitter<BasketballGameState> emit) {
-    emit(state.copyWith(aiming: true, aimStart: e.p, aimCurrent: e.p));
+    emit(state.copyWith(
+      aiming: true,
+      aimStart: e.p,
+      aimCurrent: e.p, // ensure start = current
+    ));
   }
 
   void _onDrag(ShotDrag e, Emitter<BasketballGameState> emit) {
@@ -49,13 +58,29 @@ class BasketballGameBloc extends Bloc<BasketballGameEvent, BasketballGameState> 
   }
 
   void _onRelease(ShotRelease e, Emitter<BasketballGameState> emit) {
-    final drag = state.aimStart - e.p;
-    final v0 = Offset(drag.dx * 2.2, drag.dy * 2.2);
-    emit(state.copyWith(aiming: false, ballVel: v0));
+    if (state.aimStart == Offset.zero) return;
+
+    // drag vector: start - current
+    final drag = state.aimStart - state.aimCurrent;
+
+    // scale factor to convert pixels to reasonable game velocity
+    const scale = 0.15; // tune this number
+
+    final vx = (drag.dx * scale).clamp(-800, 800).toDouble();
+    final vy = (drag.dy * scale).clamp(-1200, -400).toDouble();
+
+    final velocity = Offset(vx, vy);
+
+    debugPrint("🎯 Ball shoot velocity:============== vx=${velocity.dx}, vy=${velocity.dy}");
+
+    emit(state.copyWith(aiming: false, ballVel: velocity));
   }
+
+
 
   void _onTick(Tick e, Emitter<BasketballGameState> emit) {
     final dt = e.dt;
+    if (state.ballVel == Offset.zero) return;
 
     // integrate ball
     var v = state.ballVel;
