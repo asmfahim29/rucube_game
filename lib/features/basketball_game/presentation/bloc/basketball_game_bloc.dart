@@ -29,6 +29,7 @@ class BasketballGameBloc extends Bloc<BasketballGameEvent, BasketballGameState> 
     on<Missed>(_onMissed);
     on<HideScoreFlash>((e, emit) => emit(state.copyWith(scoreFlash: false)));
     on<ShowLevelSplash>((e, emit) => emit(state.copyWith(levelSplash: true, splashLevel: e.level)));
+    on<ClearVelocity>((e, emit) => emit(state.copyWith(ballVel: Offset.zero)));
     on<HideLevelSplash>((e, emit) => emit(state.copyWith(levelSplash: false)));
     on<ResetGame>(_onResetGame);
   }
@@ -60,20 +61,21 @@ class BasketballGameBloc extends Bloc<BasketballGameEvent, BasketballGameState> 
   void _onRelease(ShotRelease e, Emitter<BasketballGameState> emit) {
     if (state.aimStart == Offset.zero) return;
 
-    // drag vector: start - current
     final drag = state.aimStart - state.aimCurrent;
-
-    // scale factor to convert pixels to reasonable game velocity
-    const scale = 0.15; // tune this number
-
+    const scale = 0.15;
     final vx = (drag.dx * scale).clamp(-800, 800).toDouble();
     final vy = (drag.dy * scale).clamp(-1200, -400).toDouble();
-
     final velocity = Offset(vx, vy);
 
-    debugPrint("🎯 Ball shoot velocity:============== vx=${velocity.dx}, vy=${velocity.dy}");
+    debugPrint("🎯 Ball shoot velocity: vx=$vx, vy=$vy");
 
-    emit(state.copyWith(aiming: false, ballVel: velocity));
+    // ✅ Important: reset aimStart to avoid auto re-firing next frame
+    emit(state.copyWith(
+      aiming: false,
+      aimStart: Offset.zero,
+      aimCurrent: Offset.zero,
+      ballVel: velocity,
+    ));
   }
 
 

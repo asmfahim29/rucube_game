@@ -39,6 +39,8 @@ class ShowLevelSplash extends BasketballGameEvent {
   ShowLevelSplash(this.level);
 }
 
+class ClearVelocity extends BasketballGameEvent {}
+
 class HideLevelSplash extends BasketballGameEvent {}
 
 class SpawnScoreAnim extends BasketballGameEvent {

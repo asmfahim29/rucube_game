@@ -1,7 +1,6 @@
 import 'dart:ui';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
-import 'package:rucube_game/core/constants/basket_ball_constants.dart';
 import 'package:rucube_game/features/basketball_game/presentation/bloc/basketball_game_bloc.dart';
 import 'package:rucube_game/features/basketball_game/presentation/bloc/event/basketball_game_event.dart';
 import 'ball_component.dart';
@@ -29,16 +28,26 @@ class BasketballGame extends FlameGame {
     add(hoop);
     add(ball);
 
-    // Listen to BLoC state changes
+    ball.hoop = hoop;
+
+    // ✅ Listen to Bloc changes
     bloc.stream.listen((state) {
+      // 1️⃣ When bloc gives a new ball velocity — shoot!
+      if (state.ballVel != Offset.zero && !ball.isMoving) {
+        ball.shoot(state.ballVel);
+
+        // 🧹 Reset velocity in Bloc to prevent repeat
+        bloc.add(ClearVelocity());
+      }
       // Update hoop speed when it changes
       if (state.hoopSpeed != lastHoopSpeed) {
         lastHoopSpeed = state.hoopSpeed;
         hoop.setSpeed(state.hoopSpeed);
       }
 
-      // Reset game when transitioning from game over to new game
-      if (lastGameOverState && !state.isGameOver) {
+      // 2️⃣ When game is reset
+      if (state.isGameOver) return;
+      if (state.score == 0 && state.lives == 5 && !ball.isMoving) {
         resetGame();
       }
 
@@ -81,17 +90,22 @@ class BasketballGame extends FlameGame {
 
       // Score detection
       if (hoop.checkScore(ball.position)) {
-        ball.isMoving = false;
         hasScored = true;
         bloc.add(Scored());
         playScoreSound();
 
-        // FIX 3: Trigger score animation on hoop
-        hoop.triggerScoreAnimation();
+        // Trigger the ball scoring animation (instead of instantly resetting)
+        final hoopCenter = Vector2(
+          hoop.position.x + hoop.size.x / 2,
+          hoop.position.y + hoop.size.y / 2,
+        );
+        ball.animateScore(hoopCenter);
 
-        // Reset ball after animation completes
-        Future.delayed(const Duration(milliseconds: 150), () {
-          ball.resetBall();
+        // Optionally trigger the hoop’s visual animation too
+        // hoop.triggerScoreAnimation();
+
+        // Mark scoring complete after ball animation done
+        Future.delayed(const Duration(milliseconds: 400), () {
           hasScored = false;
         });
       }
@@ -143,19 +157,30 @@ class BasketballGame extends FlameGame {
   // Input: swipe/flick from ball area (like Messenger)
   void onPanStart(DragStartInfo info) {
     final p = info.eventPosition.global;
-    // Only start if near the ball
-    if ((p - ball.position).length <= kBallRadius * 1.4) {
+    final distance = (p - ball.position).length;
+
+    final ballRadius = ball.size.x / 2;
+
+    // ✅ Allow touch only if near the ball and ball is NOT moving
+    if (distance <= ballRadius * 1.2 && !ball.isMoving) {
       bloc.add(ShotBegin(Offset(p.x, p.y)));
     }
   }
 
   void onPanUpdate(DragUpdateInfo info) {
+    if (ball.isMoving) return; // ✅ Ignore updates while ball is in air
+
     final p = info.eventPosition.global;
     bloc.add(ShotDrag(Offset(p.x, p.y)));
   }
 
   void onPanEnd(DragEndInfo info) {
+    if (ball.isMoving) return; // ✅ Ignore flicks while ball is flying
+
     final p = info.velocity;
     bloc.add(ShotRelease(Offset(p.x, p.y)));
+
+    // Now actually shoot the ball (once the Bloc state updates)
+    onFlick(Offset(p.x, p.y));
   }
 }

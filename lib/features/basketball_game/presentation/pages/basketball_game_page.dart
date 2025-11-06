@@ -16,12 +16,12 @@ class BasketballGameScreen extends StatelessWidget {
   final _random = Random();
 
   final List<Color> _colorPalette = [
-    Colors.lightBlueAccent,
+    Colors.lightBlueAccent.shade200,
     Colors.greenAccent.shade200,
     Colors.purple.shade200,
-    Colors.teal,
+    Colors.teal.shade200,
     Colors.pink.shade200,
-    Colors.deepPurple,
+    Colors.deepPurple.shade200,
     Colors.cyan.shade200,
     Colors.lime.shade200,
     Colors.amber.shade200,
@@ -36,6 +36,7 @@ class BasketballGameScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Offset? startPosition;
     final bloc = context.read<BasketballGameBloc>();
     final game = BasketballGame(bloc);
 
@@ -60,11 +61,30 @@ class BasketballGameScreen extends StatelessWidget {
             }
           },
           child: GestureDetector(
+            onPanStart: (details) {
+              final bloc = context.read<BasketballGameBloc>();
+              final pos = details.globalPosition;
+              startPosition = details.localPosition;
+              bloc.add(ShotBegin(Offset(pos.dx, pos.dy)));
+            },
             onPanUpdate: (details) {
-              // optional: track drag distance for power bar
+              final bloc = context.read<BasketballGameBloc>();
+              final pos = details.globalPosition;
+              bloc.add(ShotDrag(Offset(pos.dx, pos.dy)));
             },
             onPanEnd: (details) {
-              game.onFlick(details.velocity.pixelsPerSecond);
+              if (startPosition == null) return;
+
+              final ballPos = game.ball.position;
+              final dx = startPosition!.dx - ballPos.x;
+              final dy = startPosition!.dy - ballPos.y;
+              final distance = sqrt(dx * dx + dy * dy);
+
+              if (distance < 80) {
+                // Only shoot if the gesture started near the ball
+                game.onFlick(details.velocity.pixelsPerSecond);
+              }
+              startPosition = null;
             },
             child: Stack(
               children: [

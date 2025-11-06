@@ -12,7 +12,7 @@ class HoopComponent extends SpriteComponent with HasGameReference<BasketballGame
   double currentSpeed = 0.0;
   late Vector2 initialPosition; // Store initial position
 
-  HoopComponent() : super(size: Vector2(90, 90));
+  HoopComponent() : super(size: Vector2(130, 130));
   late Sprite ballSprite;
 
   @override
