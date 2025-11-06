@@ -91,13 +91,15 @@ class BallComponent extends SpriteComponent with HasGameReference<BasketballGame
 
 
   void shoot(Offset flickVelocity) {
+    // ✅ Prevent multiple taps or mid-air shots
+    if (isMoving || isScoring) return;
+
     final vx = (flickVelocity.dx / 6).clamp(-800, 800).toDouble();
     final vy = (flickVelocity.dy / 6).clamp(-1200, -400).toDouble();
     velocity = Vector2(vx, vy);
     rotationSpeed = vx.sign * 5;
     isMoving = true;
 
-    // ✅ Debug print
     debugPrint('🎯 Ball shoot velocity: vx=$vx, vy=$vy');
   }
 

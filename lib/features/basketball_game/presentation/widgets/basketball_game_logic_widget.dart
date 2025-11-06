@@ -158,11 +158,10 @@ class BasketballGame extends FlameGame {
   void onPanStart(DragStartInfo info) {
     final p = info.eventPosition.global;
     final distance = (p - ball.position).length;
-
     final ballRadius = ball.size.x / 2;
 
-    // ✅ Allow touch only if near the ball and ball is NOT moving
-    if (distance <= ballRadius * 1.2 && !ball.isMoving) {
+    // ✅ Allow touch only if near ball and not moving or scoring
+    if (distance <= ballRadius * 1.2 && !ball.isMoving && !ball.isScoring) {
       bloc.add(ShotBegin(Offset(p.x, p.y)));
     }
   }
@@ -175,12 +174,11 @@ class BasketballGame extends FlameGame {
   }
 
   void onPanEnd(DragEndInfo info) {
-    if (ball.isMoving) return; // ✅ Ignore flicks while ball is flying
+    // ✅ Block while moving or during score animation
+    if (ball.isMoving || ball.isScoring) return;
 
     final p = info.velocity;
     bloc.add(ShotRelease(Offset(p.x, p.y)));
-
-    // Now actually shoot the ball (once the Bloc state updates)
     onFlick(Offset(p.x, p.y));
   }
 }
