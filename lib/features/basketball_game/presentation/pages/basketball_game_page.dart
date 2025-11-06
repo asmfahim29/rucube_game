@@ -16,22 +16,22 @@ class BasketballGameScreen extends StatelessWidget {
   final _random = Random();
 
   final List<Color> _colorPalette = [
-    Colors.lightBlueAccent.shade200,
-    Colors.greenAccent.shade200,
-    Colors.purple.shade200,
-    Colors.teal.shade200,
-    Colors.pink.shade200,
-    Colors.deepPurple.shade200,
-    Colors.cyan.shade200,
-    Colors.lime.shade200,
-    Colors.amber.shade200,
-    Colors.indigo.shade200, // Chocolate
+    Colors.lightBlueAccent,
+    Colors.greenAccent,
+    Colors.purple,
+    Colors.teal,
+    Colors.pink,
+    Colors.deepPurple,
+    Colors.cyan,
+    Colors.lime,
+    Colors.amber,
+    Colors.indigo, // Chocolate
     Colors.white,
   ];
 
   Color _getBackgroundColor(int level) {
     // Randomly select a color from the palette
-    return _colorPalette[_random.nextInt(_colorPalette.length)];
+    return _colorPalette[_random.nextInt(_colorPalette.length)].withOpacity(0.5);
   }
 
   @override
