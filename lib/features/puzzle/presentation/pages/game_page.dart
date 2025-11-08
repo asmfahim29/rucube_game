@@ -18,48 +18,48 @@ class GamePage extends StatelessWidget {
     return BlocBuilder<RucubeGameBloc, GameState>(
       builder: (context, state) {
         Widget body;
-        if (state is GameLoading) {
-          body = const Center(child: CircularProgressIndicator());
-        } else if (state is GameSolved) {
-          body = Stack(children: [
-            const _Backdrop(),
-            CelebrationOverlay(onNext: () => context.read<RucubeGameBloc>().add(const NextLevelRequested())),
-          ]);
-        } else if (state is GameReady) {
-          body = Column(
-            children: [
-              const SizedBox(height: 12),
-              _Hud(level: state.level, moves: state.moves, elapsed: state.elapsed),
-              Expanded(child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: CubeWebView(
-                  key: cubeKey,
-                  onJsMessage: (msg) {
-                    if (msg['type'] == 'moveComplete') {
-                      // handle messages from the webview (optional)
-                    }
-                  },
-                ),
-              )),
-              _MovePad(
-                onDo: (m) {
-                  context.read<RucubeGameBloc>().add(MoveCommitted(m));
-                },
-                onScramble: () {
-                  context.read<RucubeGameBloc>().add(const ScrambleRequested(moves: 12));
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    try {
-                      cubeKey.currentState?.scramble(12);
-                    } catch (e) {}
-                  });
-                },
-              ),
-              const SizedBox(height: 12),
-            ],
-          );
-        } else {
-          body = const SizedBox.shrink();
-        }
+        // if (state is GameLoading) {
+        //   body = const Center(child: CircularProgressIndicator());
+        // } else if (state is GameSolved) {
+        //   body = Stack(children: [
+        //     const _Backdrop(),
+        //     CelebrationOverlay(onNext: () => context.read<RucubeGameBloc>().add(const NextLevelRequested())),
+        //   ]);
+        // } else if (state is GameReady) {
+        //   body = Column(
+        //     children: [
+        //       const SizedBox(height: 12),
+        //       _Hud(level: state.level, moves: state.moves, elapsed: state.elapsed),
+        //       Expanded(child: Padding(
+        //         padding: const EdgeInsets.all(12.0),
+        //         child: CubeWebView(
+        //           key: cubeKey,
+        //           onJsMessage: (msg) {
+        //             if (msg['type'] == 'moveComplete') {
+        //               // handle messages from the webview (optional)
+        //             }
+        //           },
+        //         ),
+        //       )),
+        //       _MovePad(
+        //         onDo: (m) {
+        //           context.read<RucubeGameBloc>().add(MoveCommitted(m));
+        //         },
+        //         onScramble: () {
+        //           context.read<RucubeGameBloc>().add(const ScrambleRequested(moves: 12));
+        //           WidgetsBinding.instance.addPostFrameCallback((_) {
+        //             try {
+        //               cubeKey.currentState?.scramble(12);
+        //             } catch (e) {}
+        //           });
+        //         },
+        //       ),
+        //       const SizedBox(height: 12),
+        //     ],
+        //   );
+        // } else {
+        //   body = const SizedBox.shrink();
+        // }
 
         return Scaffold(
           backgroundColor: const Color(0xFF0F0F12),
@@ -69,7 +69,7 @@ class GamePage extends StatelessWidget {
             elevation: 0,
             foregroundColor: Colors.white,
           ),
-          body: body,
+          body: SizedBox(),
         );
       },
     );

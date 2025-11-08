@@ -19,7 +19,7 @@ class BallComponent extends SpriteComponent with HasGameReference<BasketballGame
   Vector2? scoreEnd;
   late HoopComponent hoop;
 
-  BallComponent() : super(size: Vector2(60, 60));
+  BallComponent() : super(size: Vector2(50, 50));
 
 
   @override
@@ -69,7 +69,7 @@ class BallComponent extends SpriteComponent with HasGameReference<BasketballGame
       if (t >= 1.0) {
         isScoring = false;
         opacity = 1.0;
-        size = Vector2.all(60);
+        size = Vector2.all(50);
         resetBall();
       }
 

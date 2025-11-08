@@ -1,36 +1,34 @@
 part of '../game_bloc.dart';
 
-abstract class GameEvent extends Equatable {
-  const GameEvent();
-  @override
-  List<Object?> get props => [];
+abstract class GameEvent {}
+
+class StartLevel extends GameEvent {
+  final int size;
+  StartLevel(this.size);
 }
 
-class GameStarted extends GameEvent {
-  final LevelSpec level;
-  const GameStarted(this.level);
+class ShuffleCube extends GameEvent {
+  final int moves;
+  ShuffleCube({this.moves = 30});
 }
 
-class MoveCommitted extends GameEvent {
-  final Move move;
-  const MoveCommitted(this.move);
+class TransformUpdate extends GameEvent {
+  final double dx;
+  final double dy;
+  final double scale;
+  final int pointerCount;
+  TransformUpdate({required this.dx, required this.dy, required this.scale, required this.pointerCount});
 }
 
-class ScrambleRequested extends GameEvent {
-  final int? moves;
-  const ScrambleRequested({this.moves});
+class TransformStart extends GameEvent {
+  final Offset focalPoint;
+  TransformStart(this.focalPoint);
 }
 
-class CheckSolvedRequested extends GameEvent {
-  const CheckSolvedRequested();
-}
+class TransformEnd extends GameEvent {}
 
-class NextLevelRequested extends GameEvent {
-  const NextLevelRequested();
-}
-
-class _RenderArrived extends GameEvent {
-  final List<RenderSticker> render;
-  const _RenderArrived(this.render);
+class FaceSwipeRequested extends GameEvent {
+  final String direction; // 'up','down','left','right'
+  FaceSwipeRequested(this.direction);
 }
 

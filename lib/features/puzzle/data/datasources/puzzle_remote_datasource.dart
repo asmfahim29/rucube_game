@@ -1,7 +1,7 @@
 // import 'package:dio/dio.dart';
 //
 // import '/core/network/api_client.dart';
-// import '/features/puzzle/data/models/puzzle_model.dart';
+// import '/features/puzzle/data/models/cube_model.dart';
 //
 // /// Interface for puzzle remote data source
 // abstract class PuzzleRemoteDataSource {

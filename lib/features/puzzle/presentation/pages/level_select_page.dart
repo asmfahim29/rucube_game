@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rucube_game/core/utils/enum.dart';
-import 'package:rucube_game/features/puzzle/presentation/pages/puzzle_page.dart' show GamePage;
+import 'package:rucube_game/features/basketball_game/presentation/bloc/event/basketball_game_event.dart';
 import '../../domain/entities/puzzle.dart';
 import '../bloc/game_bloc.dart';
+import 'game_page.dart';
 
 class LevelSelectPage extends StatelessWidget {
   const LevelSelectPage({super.key});
@@ -22,7 +23,7 @@ class LevelSelectPage extends StatelessWidget {
           final l = levels[i];
           return InkWell(
             onTap: (){
-              context.read<RucubeGameBloc>().add(GameStarted(l));
+              context.read<RucubeGameBloc>().add(GameStarted() as GameEvent);
               Navigator.of(context).push(MaterialPageRoute(builder: (_) => GamePage(level: l)));
             },
             child: Card(

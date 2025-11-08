@@ -1,39 +1,48 @@
 part of '../game_bloc.dart';
 
-abstract class GameState extends Equatable {
-  const GameState();
-  @override
-  List<Object?> get props => [];
-}
+class GameState {
+  final CubeModel cube;
+  final bool busy;
+  final double rotX;
+  final double rotY;
+  final double scale;
+  final int size;
 
-class GameLoading extends GameState {}
+  GameState({
+    required this.cube,
+    required this.busy,
+    required this.rotX,
+    required this.rotY,
+    required this.scale,
+    required this.size,
+  });
 
-class GameReady extends GameState {
-  final LevelSpec level;
-  final List<RenderSticker> render;
-  final int moves;
-  final Duration elapsed;
-  const GameReady({required this.level, required this.render, required this.moves, required this.elapsed});
-
-  GameReady copyWith({LevelSpec? level, List<RenderSticker>? render, int? moves, Duration? elapsed}) {
-    return GameReady(
-      level: level ?? this.level,
-      render: render ?? this.render,
-      moves: moves ?? this.moves,
-      elapsed: elapsed ?? this.elapsed,
+  GameState copyWith({
+    CubeModel? cube,
+    bool? busy,
+    double? rotX,
+    double? rotY,
+    double? scale,
+    int? size,
+  }) {
+    return GameState(
+      cube: cube ?? this.cube,
+      busy: busy ?? this.busy,
+      rotX: rotX ?? this.rotX,
+      rotY: rotY ?? this.rotY,
+      scale: scale ?? this.scale,
+      size: size ?? this.size,
     );
   }
 
-  @override
-  List<Object?> get props => [level, render, moves, elapsed];
+  factory GameState.initial(int size) {
+    return GameState(
+      cube: CubeModel.create(size),
+      busy: true,
+      rotX: -0.4,
+      rotY: 0.2,
+      scale: 1.0,
+      size: size,
+    );
+  }
 }
-
-class GameSolved extends GameState {
-  final LevelSpec level;
-  final int moves;
-  final Duration time;
-  const GameSolved({required this.level, required this.moves, required this.time});
-  @override
-  List<Object?> get props => [level, moves, time];
-}
-

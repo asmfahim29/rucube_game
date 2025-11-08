@@ -52,16 +52,16 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton(() => NextLevel(sl()));
 
   // BLoC (factory = new instance each time)
-  sl.registerFactory(
-        () => RucubeGameBloc(
-      initPuzzle: sl(),
-      applyMove: sl(),
-      scramblePuzzle: sl(),
-      checkSolved: sl(),
-      nextLevel: sl(),
-      renderStream: (sl<PuzzleRepository>() as PuzzleRepositoryImpl).render$(),
-    ),
-  );
+  // sl.registerFactory(
+  //       () => RucubeGameBloc(
+  //     initPuzzle: sl(),
+  //     applyMove: sl(),
+  //     scramblePuzzle: sl(),
+  //     checkSolved: sl(),
+  //     nextLevel: sl(),
+  //     renderStream: (sl<PuzzleRepository>() as PuzzleRepositoryImpl).render$(),
+  //   ),
+  // );
 
   // ------------------ 🧩 Basket-Ball Feature ------------------
 
