@@ -25,7 +25,7 @@ class PlayerComponent extends PositionComponent with DragCallbacks {
   bool onDragEnd(DragEndEvent event) {
     final dragVector = _dragStart - _dragEnd;
     final power = dragVector.length.clamp(0, 300).toDouble();
-    ball.kick(dragVector, power);
+    ball.isInAir;
     return true;
   }
 

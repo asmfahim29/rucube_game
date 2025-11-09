@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rucube_game/features/basketball_game/presentation/bloc/basketball_game_bloc.dart';
 import 'package:rucube_game/features/basketball_game/presentation/pages/basketball_game_page.dart';
+import 'package:rucube_game/features/kickfree_2D/presentation/pages/level_select_page.dart';
 import '/core/constants/api_urls.dart';
 import '/core/di/service_locator.dart';
 import '/core/presentation/widgets/global_network_listener.dart';
@@ -99,7 +100,7 @@ class MyApp extends StatelessWidget {
     // if (isLoggedIn) {
     //   return const ProductPage();
     // }
-    return BasketballGameScreen();
+    return KickFreeLevelSelectPage();
   }
 }
 

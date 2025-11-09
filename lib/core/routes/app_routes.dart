@@ -12,7 +12,7 @@ extension AppRoutesExtention on AppRoutes {
       case AppRoutes.levelSelect:
         return const LevelSelectPage();
       case AppRoutes.gameplay:
-        final payload = arguments as Kickfree2dPageArgs?;
+        final payload = arguments as KickFree2dPageArgs?;
         return GameplayPage(args: payload);
     }
   }

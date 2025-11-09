@@ -16,7 +16,7 @@ class KickFreeLevelSelectPage extends StatelessWidget {
               context,
               MaterialPageRoute(
                 builder: (_) => AppRoutes.gameplay
-                    .buildWidget(arguments: const Kickfree2dPageArgs(levelId: 1)),
+                    .buildWidget(arguments: const KickFree2dPageArgs(levelId: 1)),
               ),
             );
           },
